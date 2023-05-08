@@ -1,7 +1,7 @@
 from kubernetes import client, config, utils
 import time
 
-def pod_health_checker():
+def pod_health_checker(namespace,label_selector):
     # Load Kubernetes configuration
     config.load_kube_config()
 
@@ -10,10 +10,10 @@ def pod_health_checker():
     custom_objects_api = client.CustomObjectsApi()
 
     # Get all pods in the default namespace
-    pods = v1.list_namespaced_pod(namespace="default").items
+    pods = v1.list_namespaced_pod(namespace,label_selector=label_selector).items
 
     #Get the pods' usage metrics
-    pod_metrics = custom_objects_api.list_namespaced_custom_object(group="metrics.k8s.io",version="v1beta1", namespace="default", plural="pods")["items"]
+    pod_metrics = custom_objects_api.list_namespaced_custom_object(group="metrics.k8s.io",version="v1beta1", namespace=namespace, plural="pods")["items"]
 
     #Parse string values into integer
     for pod in pod_metrics:
@@ -68,9 +68,12 @@ def pod_autoscaler(namespace,deployment_name,threshold,used_cpu_percent,used_mem
 
 
 def main():
+    namespace = "default"
+    deployment = "nginx-deployment"
+    label_selector = "app=nginx"
     while True:
-        used_cpu_percent,used_mem_percent = pod_health_checker()
-        pod_autoscaler("default","nginx-deployment",0.8,used_cpu_percent,used_mem_percent)
+        used_cpu_percent,used_mem_percent = pod_health_checker(namespace,label_selector)
+        pod_autoscaler(namespace,deployment,0.2,used_cpu_percent,used_mem_percent)
         time.sleep(60)
 
 if __name__ == "__main__":
