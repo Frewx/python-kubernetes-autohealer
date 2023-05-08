@@ -1,4 +1,5 @@
 from kubernetes import client, config, utils
+import time
 
 def pod_health_checker():
     # Load Kubernetes configuration
@@ -47,7 +48,7 @@ def pod_autoscaler(namespace,deployment_name,threshold,used_cpu_percent,used_mem
     # Define the resource limit and request threshold for scaling
     replicas = appsv1.read_namespaced_deployment(deployment_name, namespace).spec.replicas
 
-    #Handle if cpu and memory usage is 0
+    #Handle if cpu or memory usage is 0
     if used_cpu_percent == 0 or used_mem_percent == 0:
         print("Used CPU percent is 0 skipping autoscaling...") #TODO: ugurakgul: Can we throw some errors here ?
 
@@ -67,23 +68,10 @@ def pod_autoscaler(namespace,deployment_name,threshold,used_cpu_percent,used_mem
 
 
 def main():
-    used_cpu_percent,used_mem_percent = pod_health_checker()
-    pod_autoscaler("default","nginx-deployment",0.5,used_cpu_percent,used_mem_percent)
+    while True:
+        used_cpu_percent,used_mem_percent = pod_health_checker()
+        pod_autoscaler("default","nginx-deployment",0.8,used_cpu_percent,used_mem_percent)
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
-
-    # replicas = appsv1.read_namespaced_deployment(deployment_name, "default").spec.replicas
-    # print("replicas for pod {0} is {1}".format(pod.metadata.name,replicas))
-
-#     # Check if the pod is using more than the threshold of its resources
-#     if used_cpu_percent > threshold or used_mem_percent > threshold:
-#         # Scale up the deployment
-#         deployment_name = pod.metadata.labels["app"]
-#         replicas = v1.read_namespaced_deployment(deployment_name, "default").spec.replicas
-#         v1.patch_namespaced_deployment_scale(deployment_name, "default", {"spec": {"replicas": replicas + 1}})
-#     else:
-#         # Scale down the deployment
-#         deployment_name = pod.metadata.labels["app"]
-#         replicas = v1.read_namespaced_deployment(deployment_name, "default").spec.replicas
-#         v1.patch_namespaced_deployment_scale(deployment_name, "default", {"spec": {"replicas": replicas - 1}})
