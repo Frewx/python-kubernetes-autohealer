@@ -1,9 +1,10 @@
 from kubernetes import client, config, utils
-import time
+import datetime
+
+# Get the current date and time
+now = datetime.datetime.now()
 
 def pod_health_checker(namespace,label_selector):
-    # Load Kubernetes configuration
-    config.load_kube_config()
 
     # Create Kubernetes API clients
     v1 = client.CoreV1Api()
@@ -29,7 +30,9 @@ def pod_health_checker(namespace,label_selector):
         parsed_cpu_limits = utils.parse_quantity(limits["cpu"])
         parsed_mem_limits = utils.parse_quantity(limits["memory"])
 
-
+        print("---------------------")
+        print(now.strftime("%Y-%m-%d %H:%M:%S"))
+        print("---------------------")
         print("Parsed CPU usage:{0} and CPU limit:{1}".format(parsed_cpu_usage,parsed_cpu_limits))
         print("Parsed memory usage:{0} and memory limit:{1}".format(parsed_mem_usage,parsed_mem_limits))
 
@@ -51,30 +54,33 @@ def pod_autoscaler(namespace,deployment_name,threshold,used_cpu_percent,used_mem
     #Handle if cpu or memory usage is 0
     if used_cpu_percent == 0 or used_mem_percent == 0:
         print("Used CPU percent is 0 skipping autoscaling...") #TODO: ugurakgul: Can we throw some errors here ?
+        print("---------------------")
 
     elif used_cpu_percent > threshold or used_mem_percent > threshold:
             print("Usage is bigger than the threshold: {0}. Scaling up the deployment...".format(threshold))
-            
+            print("---------------------")
+
             replicas = appsv1.read_namespaced_deployment(deployment_name, namespace).spec.replicas
             appsv1.patch_namespaced_deployment_scale(deployment_name, namespace, {"spec": {"replicas": replicas + 1}})
     else:
         if replicas == 1:
             print("Usage is lower than the threshold: {0} but replica count is only 1, cannot scale down the deployment.".format(threshold))
+            print("---------------------")
 
         else:
             print("Usage is lower than the threshold: {0} and the replica count is bigger than 1, scaling down the deployment...".format(threshold))
+            print("---------------------")
             replicas = appsv1.read_namespaced_deployment(deployment_name, namespace).spec.replicas
             appsv1.patch_namespaced_deployment_scale(deployment_name, namespace, {"spec": {"replicas": replicas - 1}})
 
 
-def main():
-    namespace = "default"
-    deployment = "nginx-deployment"
-    label_selector = "app=nginx"
-    while True:
-        used_cpu_percent,used_mem_percent = pod_health_checker(namespace,label_selector)
-        pod_autoscaler(namespace,deployment,0.2,used_cpu_percent,used_mem_percent)
-        time.sleep(60)
+def main(namespace,deployment,label_selector,threshold,kubeconfig):
+    # Load Kubernetes configuration
+    config.load_kube_config(config_file=kubeconfig)
+    
+    used_cpu_percent,used_mem_percent = pod_health_checker(namespace,label_selector)
+    pod_autoscaler(namespace,deployment,threshold,used_cpu_percent,used_mem_percent)
+
 
 if __name__ == "__main__":
     main()

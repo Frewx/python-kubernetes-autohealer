@@ -1,6 +1,4 @@
 # python-kubernetes-autohealer
 This repository contains some python codes for kubernetes autohealing processes.
 
-##Known Issues
-
-* Pods are listed based on namespace, if you have more than one deployment, the calculation will be a mess.
+* unresponsive_nodes.py will delete stuck pods on unresponsive nodes, if using replicasets, the pods will be scheduled on the healthy nodes.
