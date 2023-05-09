@@ -1,8 +1,8 @@
 from kubernetes import client, config
-import time
+import datetime
 
-# Load Kubernetes configuration
-config.load_kube_config()
+# Get the current date and time
+now = datetime.datetime.now()
 
 def delete_pods(node_name,EVICTION_GRACE_PERIOD_SECONDS):
     # Create the Kubernetes API client
@@ -51,18 +51,24 @@ def search_unresponsive_nodes():
     for node in nodes:
         # Check if the node is unresponsive
         if not check_node_status(node.metadata.name):
-            print("Node: {0} is not responsive".format(node.metadata.name))
+            print("Node: {0} is not responsive, deleting pods...".format(node.metadata.name))
             # Forcefully delete the pods from the unresponsive node
             delete_pods(node.metadata.name,EVICTION_GRACE_PERIOD_SECONDS) 
             # When we delete the pods, because of the replicas, new pods will be deployed on the responsive nodes
+            print("---------------------")
 
-def main():
-    # Define the check interval seconds
+def main(kubeconfig):
+    # Load Kubernetes configuration
+    config.load_kube_config(config_file=kubeconfig)
+    # # Define the check interval seconds
     CHECK_INTERVAL_SECONDS = 10
-
-    while True:
-        search_unresponsive_nodes()
-        time.sleep(CHECK_INTERVAL_SECONDS)
+    print("---------------------")
+    print(now.strftime("%Y-%m-%d %H:%M:%S"))
+    print("---------------------")
+    print("Searching unresponsive nodes...")
+    # while True:
+    search_unresponsive_nodes()
+        # time.sleep(CHECK_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
