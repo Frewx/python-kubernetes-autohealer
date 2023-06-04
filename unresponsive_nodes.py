@@ -6,7 +6,7 @@ def delete_pods(node_name,EVICTION_GRACE_PERIOD_SECONDS):
     v1 = client.CoreV1Api()
 
     # Define a label selector to select only pods that don't have the k8s-app label
-    label_selector = f"spec.nodeName={node_name},!k8s-app"
+    label_selector = "!k8s-app"
 
     # Get all the pods that match the labels running on the unresponsive node
     pods = v1.list_pod_for_all_namespaces(field_selector=f"spec.nodeName={node_name}",label_selector=label_selector).items
@@ -57,15 +57,13 @@ def search_unresponsive_nodes():
 def main(kubeconfig):
     # Load Kubernetes configuration
     config.load_kube_config(config_file=kubeconfig)
-    # # Define the check interval seconds
-    CHECK_INTERVAL_SECONDS = 10
+
     print("---------------------")
     print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print("---------------------")
     print("Searching unresponsive nodes...")
-    # while True:
+    
     search_unresponsive_nodes()
-        # time.sleep(CHECK_INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()
