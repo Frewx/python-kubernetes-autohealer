@@ -1,9 +1,6 @@
 from kubernetes import client, config
 import datetime
 
-# Get the current date and time
-now = datetime.datetime.now()
-
 def delete_pods(node_name,EVICTION_GRACE_PERIOD_SECONDS):
     # Create the Kubernetes API client
     v1 = client.CoreV1Api()
@@ -63,7 +60,7 @@ def main(kubeconfig):
     # # Define the check interval seconds
     CHECK_INTERVAL_SECONDS = 10
     print("---------------------")
-    print(now.strftime("%Y-%m-%d %H:%M:%S"))
+    print(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print("---------------------")
     print("Searching unresponsive nodes...")
     # while True:
